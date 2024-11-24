@@ -1,6 +1,6 @@
 <script setup lang='ts'>
-import { useDraggable, useElementSize, useStorage, RemovableRef, UseDraggableOptions } from '@vueuse/core';
-import { computed, onMounted, useTemplateRef, watchEffect } from 'vue';
+import { useDraggable, useElementSize, useStorage, RemovableRef, UseDraggableOptions, useWindowSize } from '@vueuse/core';
+import { computed, nextTick, onMounted, useTemplateRef, watch, watchEffect } from 'vue';
 
 interface SplitterProps {
     id: string,
@@ -27,7 +27,18 @@ const secondElementStyle = computed(() => props.type === 'row' ?
     { width: `${containerWidth.value - x.value - 16}px` } :
     { height: `${containerHeight.value - y.value - 16}px` }
 );
-const size: RemovableRef<number | null> = useStorage(`splitter-${props.id}`, null);
+const storageSplit: RemovableRef<number | null> = useStorage(`splitter-${props.id}`, null);
+const resetSplit = () => {
+    if(storageSplit.value === null) {
+        return;
+    }
+    if(props.type === 'row') {
+        x.value = (containerWidth.value - 16) * storageSplit.value;
+    } else {
+        y.value = (containerHeight.value - 16) * storageSplit.value;
+    }
+};
+watch([containerHeight, containerWidth], resetSplit);
 watchEffect(() => {
     if(containerWidth.value === 0 ||
         containerHeight.value === 0 ||
@@ -36,31 +47,31 @@ watchEffect(() => {
         return;
     }
     if(props.type === 'row') {
-        size.value = x.value / containerWidth.value;
+        storageSplit.value = x.value / (containerWidth.value - 16);
     } else {
-        size.value = y.value / containerHeight.value;
+        storageSplit.value = y.value / (containerHeight.value - 16);
     }
-})
+});
 onMounted(() => {
     if(props.type === 'row') {
-        if(size.value === null) {
+        if(storageSplit.value === null) {
             if(props.initialSplit) {
-                x.value = containerWidth.value * props.initialSplit - 8;
+                x.value = (containerWidth.value - 16) * props.initialSplit;
             } else {
-                x.value = (containerWidth.value / 2) - 8;
+                x.value = (containerWidth.value - 16) / 2;
             }
         } else {
-            x.value = containerWidth.value * size.value;
+            x.value = (containerWidth.value - 16) * storageSplit.value;
         }
     } else {
-        if(size.value === null) {
+        if(storageSplit.value === null) {
             if(props.initialSplit) {
-                y.value = containerHeight.value * props.initialSplit - 8;
+                y.value = (containerHeight.value - 16) * props.initialSplit;
             } else {
-                y.value = (containerHeight.value / 2) - 8;
+                y.value = (containerHeight.value - 16) / 2;
             }
         } else {
-            y.value = containerHeight.value * size.value;
+            y.value = (containerHeight.value - 16) * storageSplit.value;
         }
     }
 });

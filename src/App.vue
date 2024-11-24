@@ -7,8 +7,8 @@ import SplitterComponent from './components/SplitterComponent.vue';
         <SplitterComponent
             id='0'
             class='w-full h-full'
-            type='col'
-            :initial-split='0.6'>
+            type='row'
+            :initial-split='0.5'>
             <template #first>
                 <div
                     class='w-full h-full flex justify-center items-center
