@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+      @apply font-sans;
+      @apply leading-6;
+      @apply text-base;
+      @apply font-normal;
+    }
+    :root, body, #app {
+        @apply w-full h-full;
+    }
+}
