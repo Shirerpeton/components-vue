@@ -24,16 +24,18 @@ const draggableOptions = computed(() => ({
     preventDefault: true
 }));
 const { x, y, style } = useDraggable(handleRef, draggableOptions.value as UseDraggableOptions);
-const firstElementStyle = computed(() => type === SplitterType.row ?
-    { 'width': `${x.value}px` } :
-    { 'height': `${y.value}px` }
+const firstElementStyle = computed(() =>
+    type === SplitterType.row ?
+        { width: `${x.value}px` } :
+        { height: `${y.value}px` }
 );
-const secondElementStyle = computed(() => type === SplitterType.row ?
-    { width: `${containerWidth.value - x.value - 16}px` } :
-    { height: `${containerHeight.value - y.value - 16}px` }
+const secondElementStyle = computed(() =>
+    type === SplitterType.row ?
+        { width: `${containerWidth.value - x.value - 16}px` } :
+        { height: `${containerHeight.value - y.value - 16}px` }
 );
 const storageSplit: RemovableRef<number | null> = useStorage(`splitter-${id}`, null);
-const resetSplit = () => {
+const resetSplit = (): void => {
     if(storageSplit.value === null) {
         return;
     }
@@ -85,10 +87,10 @@ onMounted(() => {
         <div
             ref='handleRef'
             :style='style'
-            :class='type === "row" ? "h-full w-4 cursor-col-resize" : "w-full h-4 cursor-row-resize"'
+            :class='type === SplitterType.row ? "h-full w-4 cursor-col-resize" : "w-full h-4 cursor-row-resize"'
             class='absolute flex flex-row justify-center items-center rounded-md hover:bg-gray-100'>
             <span
-                :class='type === "row" ? "h-8 w-1" : "h-1 w-8"'
+                :class='type === SplitterType.row ? "h-8 w-1" : "h-1 w-8"'
                 class='bg-gray-600 rounded-full' />
         </div>
         <div
