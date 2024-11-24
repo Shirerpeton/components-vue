@@ -1,38 +1,43 @@
 <script setup lang='ts'>
-import { useDraggable, useElementSize, useStorage, RemovableRef, UseDraggableOptions, useWindowSize } from '@vueuse/core';
-import { computed, nextTick, onMounted, useTemplateRef, watch, watchEffect } from 'vue';
+import { useDraggable, useElementSize, useStorage, RemovableRef, UseDraggableOptions } from '@vueuse/core';
+import { computed, onMounted, useTemplateRef, watch, watchEffect } from 'vue';
+
+enum SplitterType {
+    row = 'row',
+    column = 'col'
+}
 
 interface SplitterProps {
     id: string,
-    type: 'row' | 'col',
+    type: string,
     initialSplit?: number
 };
 
-const props = defineProps<SplitterProps>();
+const { id, type, initialSplit = 0.5 } = defineProps<SplitterProps>();
 
 const handleRef = useTemplateRef<HTMLDivElement>('handleRef');
 const containerRef = useTemplateRef<HTMLDivElement>('containerRef');
 const { width: containerWidth, height: containerHeight } = useElementSize(containerRef);
 const draggableOptions = computed(() => ({
-    axis: props.type === 'row' ? 'x' : 'y',
+    axis: type === SplitterType.row ? 'x' : 'y',
     containerElement: containerRef,
     preventDefault: true
 }));
 const { x, y, style } = useDraggable(handleRef, draggableOptions.value as UseDraggableOptions);
-const firstElementStyle = computed(() => props.type === 'row' ?
+const firstElementStyle = computed(() => type === SplitterType.row ?
     { 'width': `${x.value}px` } :
     { 'height': `${y.value}px` }
 );
-const secondElementStyle = computed(() => props.type === 'row' ?
+const secondElementStyle = computed(() => type === SplitterType.row ?
     { width: `${containerWidth.value - x.value - 16}px` } :
     { height: `${containerHeight.value - y.value - 16}px` }
 );
-const storageSplit: RemovableRef<number | null> = useStorage(`splitter-${props.id}`, null);
+const storageSplit: RemovableRef<number | null> = useStorage(`splitter-${id}`, null);
 const resetSplit = () => {
     if(storageSplit.value === null) {
         return;
     }
-    if(props.type === 'row') {
+    if(type === SplitterType.row) {
         x.value = (containerWidth.value - 16) * storageSplit.value;
     } else {
         y.value = (containerHeight.value - 16) * storageSplit.value;
@@ -46,33 +51,23 @@ watchEffect(() => {
         y.value < 0) {
         return;
     }
-    if(props.type === 'row') {
+    if(type === SplitterType.row) {
         storageSplit.value = x.value / (containerWidth.value - 16);
     } else {
         storageSplit.value = y.value / (containerHeight.value - 16);
     }
 });
 onMounted(() => {
-    if(props.type === 'row') {
-        if(storageSplit.value === null) {
-            if(props.initialSplit) {
-                x.value = (containerWidth.value - 16) * props.initialSplit;
-            } else {
-                x.value = (containerWidth.value - 16) / 2;
-            }
-        } else {
-            x.value = (containerWidth.value - 16) * storageSplit.value;
-        }
+    if(storageSplit.value) {
+        resetSplit();
+        return;
+    }
+    if(type === SplitterType.row) {
+        x.value = (containerWidth.value - 16) * initialSplit;
+        storageSplit.value = x.value / (containerWidth.value - 16);
     } else {
-        if(storageSplit.value === null) {
-            if(props.initialSplit) {
-                y.value = (containerHeight.value - 16) * props.initialSplit;
-            } else {
-                y.value = (containerHeight.value - 16) / 2;
-            }
-        } else {
-            y.value = (containerHeight.value - 16) * storageSplit.value;
-        }
+        y.value = (containerHeight.value - 16) * initialSplit;
+        storageSplit.value = y.value / (containerHeight.value - 16);
     }
 });
 </script>
@@ -80,7 +75,7 @@ onMounted(() => {
 <template>
     <div
         ref='containerRef'
-        :class='type === "row" ? "flex-row" : "flex-col"'
+        :class='type === SplitterType.row ? "flex-row" : "flex-col"'
         class='flex relative gap-4'>
         <div
             class='overflow-hidden'
