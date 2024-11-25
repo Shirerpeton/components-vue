@@ -1,47 +1,78 @@
 <script setup lang='ts'>
 import { onClickOutside } from '@vueuse/core';
-import { ref, computed, Ref, ComputedRef } from 'vue';
+import { ref, computed, Ref, ComputedRef, useTemplateRef } from 'vue';
 
 interface DropdownProps {
+    options: DropdownOption[],
+    selected: string[],
+    disabled?: boolean,
+    placeholder?: string,
     direction?: 'top' | 'bottom'
 }
+interface DropdownEvents {
+    select: [id: string]
+    deselect: [id: string]
+}
 
-const popup = ref(null);
-const { direction = 'bottom' } = defineProps<DropdownProps>();
-const model = defineModel<Option[]>();
-const label: ComputedRef<string> = computed(() =>
-    model.value!
-        .filter(option => option.selected)
-        .map(option => option.name)
+const { options, selected, placeholder = '', disabled = false, direction = 'bottom' } = defineProps<DropdownProps>();
+const emit = defineEmits<DropdownEvents>();
+
+const container = useTemplateRef('container');
+const label: ComputedRef<string | null> = computed(() =>
+    selected
+        .map(id => options.find(option => option.id === id)?.title)
+        .filter(title => !!title)
         .join(', '));
 const isOpen: Ref<boolean> = ref(false);
+const handleOptionClick = (optionId: string, select: boolean): void => {
+    if(disabled) {
+        return;
+    }
+    if(select) {
+        emit('select', optionId);
+    } else {
+        emit('deselect', optionId);
+    }
+}
+onClickOutside(container, () => isOpen.value && (isOpen.value = false));
+</script>
 
-const toggleOpen = (): boolean => isOpen.value = !isOpen.value;
-const selectOption = (option: Option): boolean => option.selected = !option.selected;
-onClickOutside(popup, () => isOpen.value && (isOpen.value = false));
-
+<script lang='ts'>
+export interface DropdownOption {
+    id: string,
+    title: string
+};
 </script>
 
 <template>
-    <div class='relative cursor-pointer select-none'>
+    <div
+        ref='container'
+        class='relative cursor-pointer select-none'>
         <div
-            class='border border-gray-300 rounded-md truncate
+            :class='{
+                "text-gray-600": disabled || !label,
+            }'
+            class='border border-gray-300 flex rounded-md
                 min-w-32 max-w-40 min-h-8 px-2 py-1'
-            @click='toggleOpen'>
-            {{ label }}
+            @click='isOpen = !isOpen'>
+            <span class='truncate'>{{ label || placeholder }}</span>
+            <span class='ml-auto'>{{ isOpen ? "▲" : "▼" }}</span>
         </div>
         <div
-            ref='popup'
             :class='{"hidden": !isOpen, "bottom-8": direction === "top"}'
             class='border border-gray-300 flex flex-col p-1 gap-1 rounded-md
                 absolute w-full'>
             <span
-                v-for='option in model'
+                v-for='option in options'
                 :key='option.id'
-                :class='{ "bg-gray-200": option.selected }'
-                class='hover:bg-gray-300 px-2 py-1 rounded-md'
-                @click='selectOption(option)'>
-                {{ option.name }}
+                :class='{
+                    "bg-gray-200 text-black": selected.includes(option.id),
+                    "text-gray-300": !selected.includes(option.id) && disabled,
+                    "hover:bg-gray-300": !disabled
+                }'
+                class='px-2 py-1 rounded-md'
+                @click='handleOptionClick(option.id, !selected.includes(option.id))'>
+                {{ option.title }}
             </span>
         </div>
     </div>
