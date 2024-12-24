@@ -2,7 +2,7 @@
 import { ref, Ref } from 'vue';
 import DropdownComponent, { DropdownOption } from './components/DropdownComponent.vue';
 
-const selected: Ref<string[]> = ref([]);
+const selectedId: Ref<string | null> = ref(null);
 
 const options: Ref<DropdownOption[]> = ref([
     {
@@ -19,20 +19,14 @@ const options: Ref<DropdownOption[]> = ref([
     }
 ]);
 
-const selectHandler = (id: string) => selected.value.push(id);
-const deselectHandler = (id: string) => {
-    selected.value = selected.value.filter(selectedId => selectedId !== id);
-}
-
+const selectHandler = (id: string): string => selectedId.value = id;
 </script>
 
 <template>
     <div class='w-full h-full flex justify-center items-center'>
         <DropdownComponent
             :options
-            :selected
-            placeholder='Clarify...'
-            @select='selectHandler'
-            @deselect='deselectHandler' />
+            :selected-id='selectedId'
+            @select='selectHandler' />
     </div>
 </template>
